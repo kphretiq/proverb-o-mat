@@ -1,0 +1,67 @@
+#!/usr/bin/env python
+import sys
+import random
+import argparse
+from bs4 import BeautifulSoup as bs
+
+
+class Proverb(object):
+    """
+    Read a saved web page full of proverbs horked from
+    http://www.phrases.org.uk/meanings/phrases-and-sayings-list.html
+    Spit out "new" phrases and sayings in a markov chain
+    """
+    def load(self, filename, the_class):
+        """
+        read the saved phrases, create a dictionary for each word, with a list
+        of immediately following words as values
+        """
+        self.found = {}
+        with open("phrases-and-sayings-list.html", "r") as f:
+            soup = bs(f.read(), "html.parser")
+            ps = soup.findAll("p", {"class": the_class})
+            for p in ps:
+                a = p.find("a")
+                words = a.contents[0].strip().split(" ")
+                for i in range(len(words)):
+                    word = words[i]
+                    nextword = None
+                    try:
+                        nextword = words[i+1]
+                    except IndexError:
+                        pass
+
+                    if not word in self.found:
+                        self.found[word] = []
+                    if nextword:
+                        self.found[word].append(nextword)
+
+
+    def expound(self, count):
+        """
+        randomly choose a word, then create a chain of up to "count" of 
+        likely following words
+        """
+        proverb = []
+        w = random.choice(list(self.found.keys()))
+        proverb.append(w)
+        for i in range(count):
+            try:
+                w = random.choice(self.found[w])
+            except IndexError:
+                break
+            proverb.append(w)
+
+        return " ".join(proverb)
+
+if __name__ == "__main__":
+    the_class = "phrase-list"
+    filename = "phrases-and-sayings-list.html"
+    count = 20
+    pv = Proverb()
+    pv.load(filename, the_class)
+    print(pv.expound(count))
+
+
+
+
